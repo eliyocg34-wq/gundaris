@@ -1,0 +1,607 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GUNDARIS — Connecte ta communauté</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --red:#f04444;
+  --bg:#090909;
+  --panel:#141414;
+  --panel2:#1c1c1c;
+  --white:#f7f7f7;
+  --muted:#929292;
+  --border:#292929;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:var(--bg);color:var(--white);
+  font-family:Inter,Arial,sans-serif;min-height:100vh;
+}
+button,input,textarea,select{font:inherit}
+button{cursor:pointer}
+header{
+  height:75px;padding:0 6%;display:flex;align-items:center;
+  justify-content:space-between;border-bottom:1px solid var(--border);
+  position:sticky;top:0;background:#090909ed;z-index:10;
+}
+.logo{font-size:25px;font-weight:900;letter-spacing:2px}
+.logo span{color:var(--red)}
+nav{display:flex;gap:23px;align-items:center}
+nav button,.navlink{
+  background:none;border:0;color:#bbb;font-weight:600;
+}
+nav button:hover,.navlink:hover{color:var(--red)}
+.primary{
+  background:var(--red);color:white;border:0;border-radius:9px;
+  padding:12px 19px;font-weight:800;
+}
+.secondary{
+  background:var(--panel2);color:white;border:1px solid var(--border);
+  border-radius:9px;padding:11px 16px;font-weight:700;
+}
+.container{max-width:1180px;margin:auto;padding:35px 22px}
+.hero{
+  min-height:330px;border:1px solid #382020;border-radius:22px;
+  padding:55px;background:linear-gradient(120deg,#261010,#111 65%);
+  display:flex;align-items:center;justify-content:space-between;gap:25px;
+}
+.hero h1{font-size:clamp(38px,6vw,68px);line-height:1.04;font-weight:900}
+.hero h1 span{color:var(--red)}
+.hero p{color:#bbb;margin:18px 0 25px;max-width:540px;line-height:1.7}
+.hero-symbol{font-size:110px;color:#f04444;font-weight:900;opacity:.8}
+.section-title{font-size:25px;font-weight:800;margin:38px 0 18px}
+.muted{color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:17px}
+.card{
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:15px;padding:21px;
+}
+.card h3{margin-bottom:9px}
+.card p{color:var(--muted);font-size:14px;line-height:1.6}
+.card .primary,.card .secondary{margin-top:17px}
+.page{display:none}
+.page.active{display:block}
+input,textarea,select{
+  width:100%;background:#101010;border:1px solid #333;
+  color:white;border-radius:9px;padding:13px;margin:7px 0 15px;
+  outline:none;
+}
+input:focus,textarea:focus,select:focus{border-color:var(--red)}
+label{font-size:13px;color:#bbb;font-weight:600}
+.form-box{max-width:470px;margin:35px auto}
+.form-box h2{font-size:27px;margin-bottom:10px}
+.form-box p{color:var(--muted);margin-bottom:22px;line-height:1.6}
+.form-box button{width:100%;margin-top:8px}
+.profile-head{display:flex;align-items:center;gap:17px;margin-bottom:22px}
+.avatar{
+  width:65px;height:65px;border-radius:50%;background:#3a1717;
+  display:grid;place-items:center;font-size:25px;font-weight:900;
+  color:#ff7777;
+}
+.user-card{display:flex;align-items:center;gap:13px}
+.user-card .avatar{width:48px;height:48px;font-size:18px}
+.user-card button{margin-left:auto}
+.list{display:grid;gap:12px}
+.chat-area{display:grid;grid-template-columns:260px 1fr;gap:15px}
+.chat-messages{
+  height:340px;overflow:auto;background:#101010;border-radius:10px;
+  padding:15px;margin-bottom:12px;
+}
+.message{padding:10px 13px;border-radius:10px;background:#252525;
+  margin:8px 0;max-width:80%;width:fit-content}
+.message.mine{background:#6f2424;margin-left:auto}
+#map{
+  height:330px;background:#171717;border:1px solid var(--border);
+  border-radius:14px;display:grid;place-items:center;color:#aaa;
+  text-align:center;padding:20px;
+}
+.notice{
+  padding:13px;background:#241919;border:1px solid #512626;
+  color:#ffcaca;border-radius:10px;margin:15px 0;line-height:1.5;
+}
+footer{border-top:1px solid var(--border);padding:30px;text-align:center;
+  color:#777;margin-top:50px;font-size:13px}
+.small{font-size:12px;color:#888;line-height:1.6}
+@media(max-width:750px){
+  header{height:auto;min-height:70px;padding:15px 5%;flex-wrap:wrap;gap:15px}
+  nav{width:100%;overflow-x:auto;gap:17px;padding-bottom:5px}
+  nav button{white-space:nowrap;font-size:12px}
+  .hero{padding:30px 22px}.hero-symbol{display:none}
+  .grid{grid-template-columns:1fr}
+  .chat-area{grid-template-columns:1fr}
+}
+</style>
+</head>
+
+<body>
+<header>
+  <div class="logo">GUN<span>DARIS</span></div>
+  <nav>
+    <button onclick="showPage('home')">Accueil</button>
+    <button onclick="showPage('connect')">CONNECT</button>
+    <button onclick="showPage('friends')">Amis</button>
+    <button onclick="showPage('messages')">Messages</button>
+    <button onclick="showPage('events')">Événements</button>
+    <button onclick="showPage('profile')">Profil</button>
+    <button onclick="showPage('login')" id="loginNav">Connexion</button>
+    <button onclick="logout()" id="logoutNav" style="display:none">Déconnexion</button>
+  </nav>
+</header>
+
+<main class="container">
+
+<section id="home" class="page active">
+  <div class="hero">
+    <div>
+      <h1>Ta ville.<br>Ta communauté.<br><span>Ton réseau.</span></h1>
+      <p>Découvre des personnes qui partagent tes centres d'intérêt,
+      rencontre ta communauté et participe aux événements près de chez toi.</p>
+      <button class="primary" onclick="showPage('connect')">Découvrir CONNECT</button>
+      <button class="secondary" onclick="showPage('register')">Créer un compte</button>
+    </div>
+    <div class="hero-symbol">G.</div>
+  </div>
+
+  <h2 class="section-title">Bienvenue sur GUNDARIS</h2>
+  <div class="grid">
+    <div class="card">
+      <h3>CONNECT</h3>
+      <p>Découvre des profils selon tes centres d'intérêt et ta tranche d'âge.</p>
+      <button class="secondary" onclick="showPage('connect')">Découvrir</button>
+    </div>
+    <div class="card">
+      <h3>Communauté</h3>
+      <p>Retrouve tes contacts et gère tes demandes d'amitié.</p>
+      <button class="secondary" onclick="showPage('friends')">Mes amis</button>
+    </div>
+    <div class="card">
+      <h3>Événements</h3>
+      <p>Découvre les activités et événements proposés dans ta ville.</p>
+      <button class="secondary" onclick="showPage('events')">Voir les événements</button>
+    </div>
+  </div>
+</section>
+
+<section id="register" class="page">
+  <div class="card form-box">
+    <h2>Créer ton compte</h2>
+    <p>Rejoins la communauté GUNDARIS.</p>
+    <form id="registerForm">
+      <label>Pseudo</label>
+      <input id="regUsername" maxlength="25" required placeholder="Ton pseudo">
+      <label>Date de naissance</label>
+      <input id="regBirth" type="date" required>
+      <label>Ville</label>
+      <input id="regCity" maxlength="60" required placeholder="Ex : Montpellier">
+      <label>Adresse e-mail</label>
+      <input id="regEmail" type="email" required placeholder="email@exemple.com">
+      <label>Mot de passe</label>
+      <input id="regPassword" type="password" minlength="8" required placeholder="8 caractères minimum">
+      <div class="notice">Pour protéger les utilisateurs mineurs, les profils proposés sont séparés par tranche d'âge. La ville est affichée, jamais une adresse précise.</div>
+      <button class="primary" type="submit">Créer mon compte</button>
+    </form>
+    <p class="small">Déjà inscrit ? <a href="#" onclick="showPage('login')" style="color:#ff7777">Se connecter</a></p>
+  </div>
+</section>
+
+<section id="login" class="page">
+  <div class="card form-box">
+    <h2>Connexion</h2>
+    <p>Content de te revoir sur GUNDARIS.</p>
+    <form id="loginForm">
+      <label>Adresse e-mail</label>
+      <input id="loginEmail" type="email" required>
+      <label>Mot de passe</label>
+      <input id="loginPassword" type="password" required>
+      <button class="primary" type="submit">Se connecter</button>
+    </form>
+    <p class="small">Pas encore de compte ? <a href="#" onclick="showPage('register')" style="color:#ff7777">Inscription</a></p>
+  </div>
+</section>
+
+<section id="connect" class="page">
+  <h1>CONNECT</h1>
+  <p class="muted">Découvre des profils de ta tranche d'âge.</p>
+  <div class="card" style="margin:20px 0">
+    <label>Rechercher par pseudo</label>
+    <input id="searchProfiles" placeholder="Rechercher..." oninput="loadProfiles()">
+    <label>Ville</label>
+    <input id="filterCity" placeholder="Ville" oninput="loadProfiles()">
+    <p class="small">Les profils sont limités à ta tranche d'âge. La recherche ne révèle aucune position précise.</p>
+  </div>
+  <div id="profilesList" class="grid"></div>
+</section>
+
+<section id="friends" class="page">
+  <h1>Ma communauté</h1>
+  <h2 class="section-title">Demandes reçues</h2>
+  <div id="requestsList" class="list"></div>
+  <h2 class="section-title">Mes amis</h2>
+  <div id="friendsList" class="list"></div>
+</section>
+
+<section id="messages" class="page">
+  <h1>Messagerie</h1>
+  <p class="muted">Les messages sont réservés aux contacts acceptés.</p>
+  <div class="chat-area" style="margin-top:20px">
+    <div class="card">
+      <h3>Mes contacts</h3>
+      <div id="chatContacts" class="list" style="margin-top:15px"></div>
+    </div>
+    <div class="card">
+      <h3 id="chatTitle">Choisis un contact</h3>
+      <div id="chatMessages" class="chat-messages"></div>
+      <form id="messageForm">
+        <input id="messageInput" maxlength="1000" placeholder="Écrire un message..." required>
+        <button class="primary" type="submit">Envoyer</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<section id="events" class="page">
+  <h1>Événements</h1>
+  <p class="muted">Découvre les événements de ta ville.</p>
+  <div class="card" style="margin-top:20px">
+    <h3>Proposer un événement</h3>
+    <form id="eventForm">
+      <label>Nom de l'événement</label>
+      <input id="eventTitle" maxlength="80" required>
+      <label>Ville</label>
+      <input id="eventCity" maxlength="60" required>
+      <label>Date</label>
+      <input id="eventDate" type="date" required>
+      <label>Description</label>
+      <textarea id="eventDescription" maxlength="500" rows="3"></textarea>
+      <button class="primary" type="submit">Proposer</button>
+    </form>
+  </div>
+  <h2 class="section-title">Événements disponibles</h2>
+  <div id="eventsList" class="grid"></div>
+</section>
+
+<section id="profile" class="page">
+  <h1>Mon profil</h1>
+  <div class="card" style="margin-top:20px">
+    <div class="profile-head">
+      <div class="avatar" id="profileAvatar">G</div>
+      <div><h2 id="profileName">Mon profil</h2><p class="muted" id="profileCity"></p></div>
+    </div>
+    <form id="profileForm">
+      <label>Mon pseudo</label>
+      <input id="editUsername" maxlength="25" required>
+      <label>Ma ville</label>
+      <input id="editCity" maxlength="60" required>
+      <label>Ma présentation</label>
+      <textarea id="editBio" maxlength="300" rows="4" placeholder="Parle de tes passions..."></textarea>
+      <label>Mes centres d'intérêt</label>
+      <input id="editInterests" maxlength="150" placeholder="Sport, musique, jeux vidéo...">
+      <button class="primary" type="submit">Enregistrer</button>
+    </form>
+    <p class="small">Ne publie pas ton adresse, ton établissement scolaire ou tes habitudes de déplacement.</p>
+  </div>
+</section>
+
+</main>
+
+<footer>GUNDARIS © 2026 — Connecte ta communauté. <br>Respect, sécurité et confidentialité.</footer>
+
+<script>
+// 1. CONFIGURATION SUPABASE
+// Remplace les deux valeurs ci-dessous par celles de ton projet Supabase.
+const SUPABASE_URL = "https://svlvmfoxyvlowtmcjrmm.supabase.co";
+
+const SUPABASE_KEY = "sb_publishable_-DUEAopgw72FRaFS6hI_lQ_Uhuja99J";
+let db = null;
+let currentUser = null;
+let currentProfile = null;
+let selectedChat = null;
+
+if (SUPABASE_URL.startsWith("https://") && !SUPABASE_KEY.includes("COLLE_ICI")) {
+  db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+}
+
+function showPage(id) {
+  if (["connect","friends","messages","profile"].includes(id) && !currentUser) {
+    alert("Connecte-toi pour accéder à cette rubrique.");
+    id = "login";
+  }
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  if(id==="connect") loadProfiles();
+  if(id==="friends") loadFriends();
+  if(id==="messages") loadContacts();
+  if(id==="events") loadEvents();
+  if(id==="profile") displayProfile();
+  window.scrollTo(0,0);
+}
+
+function ageBand(date) {
+  const birth = new Date(date);
+  const now = new Date();
+  let age = now.getFullYear()-birth.getFullYear();
+  const month = now.getMonth()-birth.getMonth();
+  if(month<0 || (month===0 && now.getDate()<birth.getDate())) age--;
+  if(age<13) return null;
+  if(age<=15) return "13-15";
+  if(age<=17) return "16-17";
+  if(age<=20) return "18-20";
+  return "21+";
+}
+
+function setLoggedIn(profile) {
+  currentProfile = profile;
+  currentUser = profile.id;
+  document.getElementById("loginNav").style.display="none";
+  document.getElementById("logoutNav").style.display="inline";
+}
+
+async function loadSession() {
+  if(!db) return;
+  const {data:{session}} = await db.auth.getSession();
+  if(session) {
+    currentUser = session.user.id;
+    await loadMyProfile();
+  }
+}
+
+async function loadMyProfile() {
+  const {data,error} = await db.from("profiles").select("*").eq("id",currentUser).maybeSingle();
+  if(error) return console.error(error);
+  if(data) setLoggedIn(data);
+  else alert("Ton profil n'est pas encore créé. Contacte le support.");
+}
+
+// INSCRIPTION
+document.getElementById("registerForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  if(!db) return alert("Configure d'abord Supabase dans le code.");
+  const username=document.getElementById("regUsername").value.trim();
+  const birth=document.getElementById("regBirth").value;
+  const city=document.getElementById("regCity").value.trim();
+  const email=document.getElementById("regEmail").value.trim();
+  const password=document.getElementById("regPassword").value;
+  const band=ageBand(birth);
+  if(!band) return alert("L'inscription est réservée aux personnes de 13 ans et plus.");
+  if(new Date(birth)>new Date()) return alert("Date de naissance invalide.");
+
+  const {data,error}=await db.auth.signUp({
+    email,password,
+    options:{data:{username,birth_date:birth,city,age_band:band}}
+  });
+  if(error) return alert(error.message);
+
+  if(data.session) {
+    const {error:profileError}=await db.from("profiles").upsert({
+      id:data.user.id,username,birth_date:birth,city,age_band:band
+    });
+    if(profileError) return alert(profileError.message);
+    await loadMyProfile();
+    alert("Bienvenue sur GUNDARIS !");
+    showPage("profile");
+  } else {
+    alert("Inscription enregistrée. Vérifie ton e-mail, puis connecte-toi. Si ton profil n'apparaît pas, il devra être créé après confirmation.");
+    showPage("login");
+  }
+});
+
+// CONNEXION
+document.getElementById("loginForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  if(!db) return alert("Configure d'abord Supabase dans le code.");
+  const {error}=await db.auth.signInWithPassword({
+    email:document.getElementById("loginEmail").value,
+    password:document.getElementById("loginPassword").value
+  });
+  if(error) return alert(error.message);
+  await loadMyProfile();
+  showPage("home");
+});
+
+// DÉCONNEXION
+async function logout() {
+  if(db) await db.auth.signOut();
+  currentUser=null;currentProfile=null;selectedChat=null;
+  document.getElementById("loginNav").style.display="inline";
+  document.getElementById("logoutNav").style.display="none";
+  showPage("home");
+}
+
+// PROFILS CONNECT
+async function loadProfiles() {
+  const list=document.getElementById("profilesList");
+  if(!currentProfile) {
+    list.innerHTML='<div class="card">Connecte-toi pour découvrir les profils.</div>';
+    return;
+  }
+  const search=document.getElementById("searchProfiles").value.trim();
+  const city=document.getElementById("filterCity").value.trim();
+  let query=db.from("profiles").select("id,username,city,bio,interests")
+    .eq("age_band",currentProfile.age_band)
+    .neq("id",currentUser).limit(40);
+  if(search) query=query.ilike("username",`%${search}%`);
+  if(city) query=query.ilike("city",`%${city}%`);
+  const {data,error}=await query;
+  if(error){list.innerHTML="Impossible de charger les profils.";return;}
+  list.innerHTML="";
+  if(!data.length){list.innerHTML='<div class="card">Aucun profil trouvé pour le moment.</div>';return;}
+  data.forEach(p=>{
+    const el=document.createElement("div");
+    el.className="card";
+    el.innerHTML=`<div class="user-card"><div class="avatar">${escapeHTML(p.username[0].toUpperCase())}</div><div><h3>${escapeHTML(p.username)}</h3><p>${escapeHTML(p.city)}</p></div></div><p style="margin-top:13px">${escapeHTML(p.bio||"Pas encore de présentation.")}</p><p class="small">${escapeHTML(p.interests||"")}</p><button class="primary" onclick="sendRequest('${p.id}')">Ajouter</button>`;
+    list.appendChild(el);
+  });
+}
+
+async function sendRequest(id) {
+  const {error}=await db.from("friend_requests").insert({
+    sender_id:currentUser,receiver_id:id,status:"pending"
+  });
+  if(error) alert(error.message);
+  else alert("Demande envoyée !");
+}
+
+// AMIS ET DEMANDES
+async function loadFriends() {
+  const requests=document.getElementById("requestsList");
+  const friends=document.getElementById("friendsList");
+  requests.innerHTML="Chargement...";
+  friends.innerHTML="Chargement...";
+  const {data:req}=await db.from("friend_requests")
+    .select("id,sender_id,profiles!friend_requests_sender_id_fkey(username,city)")
+    .eq("receiver_id",currentUser).eq("status","pending");
+  requests.innerHTML="";
+  (req||[]).forEach(r=>{
+    const el=document.createElement("div");el.className="card user-card";
+    el.innerHTML=`<div><b>${escapeHTML(r.profiles.username)}</b><p class="muted">${escapeHTML(r.profiles.city)}</p></div><button class="primary">Accepter</button>`;
+    el.querySelector("button").onclick=()=>respondRequest(r.id,"accepted");
+    requests.appendChild(el);
+  });
+  if(!req?.length) requests.textContent="Aucune demande reçue.";
+
+  const {data:accepted}=await db.from("friend_requests")
+    .select("sender_id,receiver_id")
+    .eq("status","accepted")
+    .or(`sender_id.eq.${currentUser},receiver_id.eq.${currentUser}`);
+  friends.innerHTML="";
+  for(const f of accepted||[]) {
+    const id=f.sender_id===currentUser?f.receiver_id:f.sender_id;
+    const {data:p}=await db.from("profiles").select("id,username,city").eq("id",id).maybeSingle();
+    if(!p) continue;
+    const el=document.createElement("div");el.className="card user-card";
+    el.innerHTML=`<div><b>${escapeHTML(p.username)}</b><p class="muted">${escapeHTML(p.city)}</p></div><button class="secondary">Message</button>`;
+    el.querySelector("button").onclick=()=>openChat(p.id,p.username);
+    friends.appendChild(el);
+  }
+  if(!accepted?.length) friends.textContent="Tu n'as pas encore d'amis.";
+}
+
+async function respondRequest(id,status) {
+  const {error}=await db.from("friend_requests").update({status}).eq("id",id);
+  if(error) alert(error.message);
+  else loadFriends();
+}
+
+// MESSAGERIE
+async function loadContacts() {
+  await loadFriends();
+  const {data}=await db.from("friend_requests")
+    .select("sender_id,receiver_id")
+    .eq("status","accepted")
+    .or(`sender_id.eq.${currentUser},receiver_id.eq.${currentUser}`);
+  const list=document.getElementById("chatContacts");
+  list.innerHTML="";
+  for(const f of data||[]) {
+    const id=f.sender_id===currentUser?f.receiver_id:f.sender_id;
+    const {data:p}=await db.from("profiles").select("id,username").eq("id",id).maybeSingle();
+    if(!p) continue;
+    const b=document.createElement("button");b.className="secondary";
+    b.textContent=p.username;b.onclick=()=>openChat(p.id,p.username);
+    list.appendChild(b);
+  }
+}
+
+async function openChat(id,name) {
+  selectedChat=id;
+  document.getElementById("chatTitle").textContent=name;
+  await loadMessages();
+}
+
+async function loadMessages() {
+  if(!selectedChat)return;
+  const {data,error}=await db.from("messages").select("*")
+    .or(`and(sender_id.eq.${currentUser},receiver_id.eq.${selectedChat}),and(sender_id.eq.${selectedChat},receiver_id.eq.${currentUser})`)
+    .order("created_at");
+  if(error)return;
+  const box=document.getElementById("chatMessages");box.innerHTML="";
+  (data||[]).forEach(m=>{
+    const div=document.createElement("div");
+    div.className="message "+(m.sender_id===currentUser?"mine":"");
+    div.textContent=m.content;box.appendChild(div);
+  });
+  box.scrollTop=box.scrollHeight;
+}
+
+document.getElementById("messageForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  if(!selectedChat)return alert("Choisis d'abord un contact.");
+  const content=document.getElementById("messageInput").value.trim();
+  if(!content)return;
+  const {error}=await db.from("messages").insert({
+    sender_id:currentUser,receiver_id:selectedChat,content
+  });
+  if(error)alert(error.message);
+  else {document.getElementById("messageInput").value="";loadMessages();}
+});
+
+// PROFIL
+function displayProfile() {
+  if(!currentProfile)return;
+  document.getElementById("profileName").textContent=currentProfile.username;
+  document.getElementById("profileCity").textContent=currentProfile.city;
+  document.getElementById("profileAvatar").textContent=currentProfile.username[0].toUpperCase();
+  document.getElementById("editUsername").value=currentProfile.username||"";
+  document.getElementById("editCity").value=currentProfile.city||"";
+  document.getElementById("editBio").value=currentProfile.bio||"";
+  document.getElementById("editInterests").value=currentProfile.interests||"";
+}
+
+document.getElementById("profileForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const changes={
+    username:document.getElementById("editUsername").value.trim(),
+    city:document.getElementById("editCity").value.trim(),
+    bio:document.getElementById("editBio").value.trim(),
+    interests:document.getElementById("editInterests").value.trim()
+  };
+  const {data,error}=await db.from("profiles").update(changes).eq("id",currentUser).select().single();
+  if(error)return alert(error.message);
+  currentProfile=data;displayProfile();alert("Profil mis à jour !");
+});
+
+// ÉVÉNEMENTS
+async function loadEvents() {
+  const {data,error}=await db.from("events").select("*").order("event_date");
+  const list=document.getElementById("eventsList");list.innerHTML="";
+  if(error){list.textContent="Impossible de charger les événements.";return;}
+  (data||[]).forEach(ev=>{
+    const el=document.createElement("div");el.className="card";
+    el.innerHTML=`<h3>${escapeHTML(ev.title)}</h3><p>${escapeHTML(ev.city)} — ${escapeHTML(ev.event_date)}</p><p style="margin-top:10px">${escapeHTML(ev.description||"")}</p>`;
+    list.appendChild(el);
+  });
+  if(!data?.length)list.textContent="Aucun événement pour le moment.";
+}
+
+document.getElementById("eventForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  if(!currentUser)return alert("Connecte-toi pour proposer un événement.");
+  const event={
+    creator_id:currentUser,
+    title:document.getElementById("eventTitle").value.trim(),
+    city:document.getElementById("eventCity").value.trim(),
+    event_date:document.getElementById("eventDate").value,
+    description:document.getElementById("eventDescription").value.trim()
+  };
+  const {error}=await db.from("events").insert(event);
+  if(error)alert(error.message);
+  else {alert("Événement proposé !");e.target.reset();loadEvents();}
+});
+
+function escapeHTML(value) {
+  return String(value??"").replace(/[&<>"']/g,c=>({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[c]));
+}
+
+loadSession();
+</script>
+</body>
+</html>
